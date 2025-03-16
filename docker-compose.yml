@@ -1,0 +1,47 @@
+version: "3.8"
+services:
+  app:
+    build: .
+    ports:
+      - "3000:3000"
+    depends_on:
+      - mongo
+      - kafka
+    environment:
+      MONGO_URI: "mongodb+srv://karthikreddydev1:msjCQgt1048EzqFb@cluster0.j1vcw.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0"
+      KAFKA_BROKER: "kafka:9092"
+
+  mongo:
+    image: mongo:latest
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongo-data:/data/db
+
+  zookeeper:
+    image: confluentinc/cp-zookeeper:latest
+    environment:
+      ZOOKEEPER_CLIENT_PORT: 2181
+
+  kafka:
+    image: confluentinc/cp-kafka:latest
+    depends_on:
+      - zookeeper
+    ports:
+      - "9092:9092"
+    environment:
+      KAFKA_BROKER_ID: 1
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+
+  consumer:
+    build: .
+    depends_on:
+      - kafka
+    command: ["node", "kafka/consumer.js"] # Run consumer.js inside the container
+    environment:
+      KAFKA_BROKER: "kafka:9092"
+
+volumes:
+  mongo-data:
